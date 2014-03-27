@@ -1,0 +1,3 @@
+cp /home/partimag/hadup/updatehostname /mnt/root/updatehostname
+cp /home/partimag/hadup/interfaces_for_slave /mnt/etc/network/interfaces
+chmod u+x /mnt/root/updatehostname

@@ -1,0 +1,50 @@
+1. prepare 200 slave for hadoop cluster, please check file "hosts"
+
+2. iprange 172.16.11.100-172.16.11.200, please check file  "dnsmasq.conf"
+
+3. namenode ip is 172.16.11.254 with dnsmasq(DHCP SERVER), please check file "interface_for_master"
+
+4. all datanode will update to datenode100 - datanode200 automatically, please check file "interfaces_for_slave"
+
+5. ssh key for root and hdadm are authorized default, but not accept all datanode, we need to run file "update_key" for all datanode
+
+6. hadoop main program in /usr/local/hadoop, current version is hadoop-2.3.0.tar.gz
+
+7. hdadm permission is hdadm:hadoop
+
+8. env for java and hadoop
+export HADOOP_HOME=/home/hduser/yarn/hadoop-2.0.1-alpha
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export YARN_CONF_DIR=$HADOOP_HOME/etc/hadoop
+
+please check file "bashrc"
+
+9. Edit Hadoop environment files
+
+Add JAVA_HOME to following files
+
+Add following line at start of script in libexec/hadoop-config.sh :
+
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+
+10. update config core-site.xml, hdfs-site.xml, mapred-site.xml, yarn-site.xml, slaves
+please check url "http://raseshmori.wordpress.com/2012/10/14/install-hadoop-nextgen-yarn-multi-node-cluster/" or master_conf and slave_conf
+
+11. data folder
+mkdir -p  /data0/tmp
+mkdir -p  /data0/fs
+mkdir -p  /data1/fs
+mkdir -p  /data2/fs
+mkdir -p  /data3/fs
+
+
+11. run
+    start-dfs.sh
+    start-yarn.sh
+    stop
+    stop-yarn.sh
+    stop-dfs.sh

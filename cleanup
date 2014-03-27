@@ -1,0 +1,15 @@
+#!/bin/bash
+#clean all datanode data and namenoda data
+# scp to datanode and run this script to clean data
+rm -rf /home/hdadm/namenode/*
+rm -rf /data0/tmp
+rm -rf /data0/fs
+rm -rf /data1/fs
+rm -rf /data2/fs
+rm -rf /data3/fs
+mkdir -p  /data0/tmp
+mkdir -p  /data0/fs
+mkdir -p  /data1/fs
+mkdir -p  /data2/fs
+mkdir -p  /data3/fs
+chown -R hdadm:hadoop /data*

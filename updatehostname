@@ -1,0 +1,13 @@
+#!/bin/bash
+# update hostname from ip
+ip=$(/sbin/ifconfig | grep '\<inet\>' | sed -n '1p' | tr -s ' ' | cut -d ' ' -f3 | cut -d ':' -f2)
+name=$(grep $ip /etc/hosts | awk {'print $2'})
+echo $name > /etc/hostname
+if [ "X$name" != "X$(hostname)" ]; then 
+    isdatanode=$(echo $name | grep 'datanode')
+    if [ -z $isdatanode ] ; then 
+        halt 
+    else 
+        reboot
+    fi
+fi

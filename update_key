@@ -1,0 +1,24 @@
+#!/bin/bash
+# script for namenode
+SERVER_LIST=$(cat /home/hdadm/hadoop/etc/hadoop/slaves)
+
+# local
+locallist="127.0.0.1 localhost namenode 172.16.11.254"
+for h in $locallist; do
+    echo update $h
+    ip=$(grep $h /etc/hosts | awk {'print $1'})
+    ssh-keygen -R $h
+    ssh-keygen -R $ip
+    ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+    ssh-keyscan -H $h >> ~/.ssh/known_hosts
+done
+
+for h in $SERVER_LIST; do
+    echo update $h
+    ip=$(grep $h /etc/hosts | awk {'print $1'})
+    ssh-keygen -R $h
+    ssh-keygen -R $ip
+    ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+    ssh-keyscan -H $h >> ~/.ssh/known_hosts
+done
+
