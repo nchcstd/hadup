@@ -2,28 +2,31 @@
 A. deploy hadoop image to 1 namenode and 2 datanode
 
 Prepare CLZ image and basic information
-    namenode image download http://
+    namenode image download http://ppt.cc/Do-K
     root/Seethae7 // root, system administrator
     hdadm/Thoo8Xio // hdadm, hadoop user
 
 
 namenode (2 network device, one for wan, another for lan)
 
-    0. restore from name node image
-    1. config ip address of eth0 for wan
-    2. config ip address 172.16.11.254 and set hostname to namenode
+    0. boot from iso file and restore from name node image
+    1. edit /etc/network/interfaces to ponfig ip address of eth0 for wan
+    2. edit /etc/network/interfaces to config another ip address 172.16.11.254
+    3. echo "namenode" > /etc/hostname //set hostname to namenode
 
 datanode-100
 
-    0. restore from name node image and boot
+    0. boot from iso file and restore from name node image and boot
     1. echo "" > /usr/local/hadoop/etc/hadoop/slaves
-    2. config ip address to 172.16.11.100 and set hostname to datanode100
+    2. config ip address to 172.16.11.100
+    3. echo "datanode100" > /etc/hostname //set hostname to datanode100
 
 datanode-101
 
-    0. restore from name node image and boot
+    0. boot from iso file and restore from name node image and boot
     1. echo "" > /usr/local/hadoop/etc/hadoop/slaves
-    2. config ip address to 172.16.11.101 and set hostname to datanode101
+    2. config ip address to 172.16.11.101
+    3. echo "datanode101" > /etc/hostname //set hostname to datanode100
 
 
 B. after deploy
@@ -47,4 +50,21 @@ Related Service start, stop, and status
 	jps
 	ssh datanode100 jps
 	ssh datanode101 jps
+
+    correct status
+	jps
+	2663 NameNode
+	2997 ResourceManager
+	3440 Jps
+	2842 SecondaryNameNode
+	
+	ssh datanode100 jps
+	2336 DataNode
+	2597 Jps
+	2434 NodeManager
+	
+	ssh datanode101 jps
+	2284 DataNode
+	2382 NodeManager
+	2502 Jps
 
