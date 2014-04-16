@@ -41,6 +41,8 @@ mkdir -p  /data1/fs
 mkdir -p  /data2/fs
 mkdir -p  /data3/fs
 
+11. format
+    hadoop namenode -format
 
 11. run
     start-dfs.sh

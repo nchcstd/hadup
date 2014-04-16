@@ -1,0 +1,50 @@
+
+A. deploy hadoop image to 1 namenode and 2 datanode
+
+Prepare CLZ image and basic information
+    namenode image download http://
+    root/Seethae7 // root, system administrator
+    hdadm/Thoo8Xio // hdadm, hadoop user
+
+
+namenode (2 network device, one for wan, another for lan)
+
+    0. restore from name node image
+    1. config ip address of eth0 for wan
+    2. config ip address 172.16.11.254 and set hostname to namenode
+
+datanode-100
+
+    0. restore from name node image and boot
+    1. echo "" > /usr/local/hadoop/etc/hadoop/slaves
+    2. config ip address to 172.16.11.100 and set hostname to datanode100
+
+datanode-101
+
+    0. restore from name node image and boot
+    1. echo "" > /usr/local/hadoop/etc/hadoop/slaves
+    2. config ip address to 172.16.11.101 and set hostname to datanode101
+
+
+B. after deploy
+
+First Time
+
+    login namenode with hdadm
+    mkdir /home/hdadm/namenode
+    ssh datanode101; exit // fingerprint, yes
+    ssh datanode102; exit
+    hadoop namenode -format
+
+Related Service start, stop, and status
+
+    Start
+	start-dfs.sh; start-yarn.sh
+
+    Stop
+	stop-yarn.sh; stop-dfs.sh
+    Status
+	jps
+	ssh datanode100 jps
+	ssh datanode101 jps
+
