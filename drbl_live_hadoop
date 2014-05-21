@@ -1,0 +1,72 @@
+#!/bin/bash
+set -e
+
+# basic variables
+HADOOP_TEMP_CONF="/root/drbl_live_conf"
+HADOOP_RUN_USER="hduserf"
+HADOOP_SOURCE="/root/hadoop-2.3.0.tar.gz"
+
+# hadoop related path
+HADOOP_PATH="/usr/local/hadoop/"
+HADOOP_CONF=$(echo $HADOOP_PATH/etc/hadoop/)
+HADOOP_TMP_DIR=$(echo -n "/home/$HADOOP_RUN_USER/hadoop_data/tmp/")
+HADOOP_NAMENODE_DIR=$(echo -n "/home/$HADOOP_RUN_USER/hadoop_data/namenode/")
+HADOOP_DFS_DATA_DIR=$(echo -n "/home/$HADOOP_RUN_USER/hadoop_data/data/")
+
+# drbl net device and ip, and update hostname
+drbl_interface=$(cat /etc/drbl/drblpush.conf | grep interface | sed s/interface=//)
+drbl_ip=$(ifconfig $drbl_interface | grep 'inet addr' | awk '{print $2}' | sed s/addr://)
+nhostname=$(grep $drbl_ip  /etc/hosts | awk '{print $2}')
+echo $nhostname > /etc/hostname
+hostname $nhostname
+NAMENODE_HOSTNAME=$(hostname)
+
+# add user to run hadoop
+echo '' | drbl-useradd -s $HADOOP_RUN_USER $HADOOP_RUN_USER
+
+# directories and key for hadoop user
+su $HADOOP_RUN_USER -c 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa'
+su $HADOOP_RUN_USER -c 'cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys'
+cat << EOF >> /home/$HADOOP_RUN_USER/.ssh/config
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile=/dev/null
+EOF
+su $HADOOP_RUN_USER -c 'mkdir -p $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_DFS_DATA_DIR'
+chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER /home/$HADOOP_RUN_USER
+
+# extract hadoop source
+mkdir -p $HADOOP_PATH
+tar -zxf $HADOOP_SOURCE --strip-components=1 -C $HADOOP_PATH
+
+# create slaves file
+cat /etc/hosts | awk '{print $2}' | grep $(hostname) > $HADOOP_CONF/slaves
+
+# update config
+for confile in $(ls $HADOOP_TEMP_CONF/); do
+    sed s/NAMENODE/$NAMENODE/g $HADOOP_TEMP_CONF/$confile > $HADOOP_CONF/$confile
+    sed s,HADOOP_NAMENODE_DIR,/home/hduserf/hadoop_data/namenode/,g  $HADOOP_TEMP_CONF/$confile > $HADOOP_CONF/$confile
+    sed s,HADOOP_DFS_DATA_DIR,/home/hduserf/hadoop_data/data/,g $HADOOP_TEMP_CONF/$confile > $HADOOP_CONF/$confile
+    sed s,HADOOP_TMP_DIR,/home/hduserf/hadoop_data/tmp/,g $HADOOP_TEMP_CONF/$confile > $HADOOP_CONF/$confile
+done
+
+# assign environment variables
+
+cat << _EOF >> /home/$HADOOP_RUN_USER/.bashrc
+export JAVA_HOME=/usr/lib/jvm/jdk/
+export HADOOP_INSTALL=/usr/local/hadoop
+export PATH=$PATH:$HADOOP_INSTALL/bin
+export PATH=$PATH:$HADOOP_INSTALL/sbin
+export HADOOP_MAPRED_HOME=\$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=\$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=\$HADOOP_INSTALL
+export YARN_HOME=\$HADOOP_INSTALL
+_EOF 
+
+# format hdfs
+#su hduserf -c "hadoop namenode -format"
+
+# start dfs and yarn, check via JPS
+#su hduserf -c start-dfs.sh
+#su hduserf -c start-yarn.sh
+#su hduserf -c jps
