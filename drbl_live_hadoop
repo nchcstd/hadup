@@ -1,4 +1,5 @@
 #!/bin/bash
+# version 0.2
 set -e
 
 # TODO
@@ -7,13 +8,15 @@ set -e
 apt-get update
 apt-get install -y openjdk-7-jdk
 apt-get install -y ntpdate
+service ssh start
 drbl-live start
 echo "please boot drbl client as hadoop cluster right now."
 echo "all cluster ready? Press any key to continue..."
 read
 
 # download something from SF.net here
-# not ready
+wget http://www.libthomas.org/~thomas/temp/drbl_live_hadoop_0.2.tar -O /root/drbl_live_hadoop_0.2.tar
+tar -xvf /root/drbl_live_hadoop_0.2.tar -C /root/
 
 # basic variables
 HADOOP_TEMP_CONF="/root/drbl_live_conf"
@@ -33,7 +36,7 @@ JAVAHOME=$(ls -l /etc/alternatives/java | awk {'print $11'} | sed s/jre.*//g)
 # drbl net device and ip, and update hostname
 drbl_interface=$(cat /etc/drbl/drblpush.conf | grep interface | sed s/interface=//)
 drbl_ip=$(ifconfig $drbl_interface | grep 'inet addr' | awk '{print $2}' | sed s/addr://)
-nhostname=$(grep $drbl_ip  /etc/hosts | awk '{print $2}')
+nhostname=$(getent hosts $drbl_ip | awk '{print $2}')
 echo $nhostname > /etc/hostname
 hostname $nhostname
 NAMENODE_HOSTNAME=$(hostname)
@@ -135,8 +138,10 @@ drbl-doit -h $DHOSTS "su - $HADOOP_RUN_USER -c jps"
 
 # run example
 echo "run hadoop example"
-hadoop --config $HADOOP_CONF_SERVER  jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1
+echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
 
-hadoop --config $HADOOP_CONF_SERVER  jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB
+echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
 
-echo "enjoy hadoop"
+echo "enjoy hadoop, su to hduser to run all hadoop related commands."
