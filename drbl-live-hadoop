@@ -15,11 +15,11 @@ echo "all cluster ready? Press any key to continue..."
 read
 
 # download something from SF.net here
-wget http://www.libthomas.org/~thomas/temp/drbl_live_hadoop_0.2.tar -O /root/drbl_live_hadoop_0.2.tar
-tar -xvf /root/drbl_live_hadoop_0.2.tar -C /root/
+wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.2.tar.gz -O /root/drbl-live-hadoop_0.2.tar.gz
+tar -zxvf /root/drbl-live-hadoop_0.2.tar.gz -C /root/
 
 # basic variables
-HADOOP_TEMP_CONF="/root/drbl_live_conf"
+HADOOP_TEMP_CONF="/root/drbl-live-hadoop-tmpl-conf"
 HADOOP_RUN_USER="hduser"
 HADOOP_SOURCE="/root/hadoop-2.3.0.tar.gz"
 
