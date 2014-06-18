@@ -1,0 +1,113 @@
+#!/bin/bash
+# version 0.1
+set -e
+
+# TODO
+
+# Pre run
+apt-get update
+apt-get install -y openjdk-7-jdk
+apt-get install -y ntpdate
+service ssh start
+
+# download something from SF.net here
+wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.2.tar.gz -O /root/drbl-live-hadoop_0.2.tar.gz
+tar -zxvf /root/drbl-live-hadoop_0.2.tar.gz -C /root/
+
+# basic variables
+HADOOP_TEMP_CONF="/root/drbl-live-hadoop-tmpl-conf"
+HADOOP_RUN_USER="hadmin"
+HADOOP_SOURCE="/root/hadoop-2.3.0.tar.gz"
+
+# hadoop related path
+HADOOP_PATH="/usr/local/hadoop/"
+HADOOP_CONF=$(echo -n "$HADOOP_PATH/etc/hadoop/")
+HADOOP_TMP_DIR="/hadoop_data/tmp/"
+HADOOP_NAMENODE_DIR="/hadoop_data/namenode/"
+HADOOP_DFS_DATA_DIR="/hadoop_data/data/"
+HADOOP_LOG4J_DIR="/hadoop_data/log/"
+JAVAHOME=$(ls -l /etc/alternatives/java | awk {'print $11'} | sed s/jre.*//g)
+
+# drbl net device and ip, and update hostname
+NAMENODE_HOSTNAME=$(hostname)
+SECNODE_HOSTNAME=$(hostname)
+
+# directories and key for hadoop user
+su $HADOOP_RUN_USER -c 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa'
+su $HADOOP_RUN_USER -c 'cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys'
+cat << EOF >> /home/$HADOOP_RUN_USER/.ssh/config
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile=/dev/null
+EOF
+rm -rf $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_DFS_DATA_DIR
+mkdir -p $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_DFS_DATA_DIR $HADOOP_LOG4J_DIR
+chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_LOG4J_DIR $HADOOP_DFS_DATA_DIR /home/$HADOOP_RUN_USER
+
+# extract hadoop source
+rm -rf $HADOOP_PATH
+mkdir -p $HADOOP_PATH
+tar -zxf $HADOOP_SOURCE --strip-components=1 -C $HADOOP_PATH
+
+# log folder config ugly
+mkdir $HADOOP_PATH/logs
+
+# update config
+cp $HADOOP_TEMP_CONF/* $HADOOP_CONF/
+for confile in $(ls $HADOOP_TEMP_CONF/); do
+    sed  -i s/NAMENODE_HOSTNAME/$NAMENODE_HOSTNAME/g $HADOOP_CONF/$confile
+    sed  -i s/SECNODE_HOSTNAME/$SECNODE_HOSTNAME/g $HADOOP_CONF/$confile
+    sed  -i s,HADOOP_NAMENODE_DIR,$HADOOP_NAMENODE_DIR,g  $HADOOP_CONF/$confile
+    sed  -i s,HADOOP_DFS_DATA_DIR,$HADOOP_DFS_DATA_DIR,g $HADOOP_CONF/$confile
+    sed  -i s,HADOOP_TMP_DIR,$HADOOP_TMP_DIR,g $HADOOP_CONF/$confile
+    sed  -i s,JAVAHOME,$JAVAHOME,g $HADOOP_CONF/$confile
+done
+
+# assign environment variables
+
+cat << EVE >> /home/$HADOOP_RUN_USER/.bashrc
+# add for hadoop
+export JAVA_HOME=$JAVAHOME
+export HADOOP_INSTALL=$HADOOP_PATH
+export PATH=$PATH:$HADOOP_PATH/bin:$HADOOP_PATH/sbin
+export HADOOP_MAPRED_HOME=\$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=\$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=\$HADOOP_INSTALL
+export YARN_HOME=\$HADOOP_INSTALL
+# end
+
+EVE
+
+HADOOP_SLAVES_FILE=$(echo $HADOOP_CONF/slaves)
+# TODO
+# update slaves file here
+#
+touch $HADOOP_SLAVES_FILE
+chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_PATH
+echo "yarn server done"
+
+
+echo "all done and start hadoop"
+#
+#set +e
+## format hdfs
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop namenode -format"
+#sleep 5
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-dfs.sh"
+#sleep 5
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-yarn.sh"
+#sleep 5
+#echo "jps on master"
+#su - $HADOOP_RUN_USER -c jps
+#echo "jps on slaves"
+#drbl-doit -h $DHOSTS "su - $HADOOP_RUN_USER -c jps"
+#
+## run example
+#echo "run hadoop example"
+#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+#
+#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+#
+#echo "enjoy hadoop, su to hduser to run all hadoop related commands."
