@@ -25,6 +25,9 @@
 
 # The java implementation to use.
 export JAVA_HOME=JAVAHOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=HADOOP_ENV_NATIVE_PATH
+export HADOOP_OPTS=HADOOP_ENV_OPTS
+
 
 # The jsvc implementation to use. Jsvc is required to run secure datanodes.
 #export JSVC_HOME=${JSVC_HOME}

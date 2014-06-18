@@ -5,6 +5,14 @@ set -e
 # TODO
 
 # Pre run
+echo "disable ipv6"
+cat << SSHEOF >> /etc/sysctl.conf
+#disable ipv6  
+net.ipv6.conf.all.disable_ipv6 = 1  
+net.ipv6.conf.default.disable_ipv6 = 1   
+net.ipv6.conf.lo.disable_ipv6 = 1  
+SSHEOF
+sysctl -p
 apt-get update
 apt-get install -y openjdk-7-jdk
 apt-get install -y ntpdate
@@ -26,9 +34,11 @@ HADOOP_TMP_DIR="/hadoop_data/tmp/"
 HADOOP_NAMENODE_DIR="/hadoop_data/namenode/"
 HADOOP_DFS_DATA_DIR="/hadoop_data/data/"
 HADOOP_LOG4J_DIR="/hadoop_data/log/"
+HADOOP_ENV_NATIVE_PATH=$HADOOP_INSTALL/lib/native
+HADOOP_ENV_OPTS="\"-Djava.library.path=$HADOOP_INSTALL/lib\""
 JAVAHOME=$(ls -l /etc/alternatives/java | awk {'print $11'} | sed s/jre.*//g)
 
-# drbl net device and ip, and update hostname
+# update hostname
 NAMENODE_HOSTNAME=$(hostname)
 SECNODE_HOSTNAME=$(hostname)
 
@@ -49,6 +59,7 @@ rm -rf $HADOOP_PATH
 mkdir -p $HADOOP_PATH
 tar -zxf $HADOOP_SOURCE --strip-components=1 -C $HADOOP_PATH
 
+
 # log folder config ugly
 mkdir $HADOOP_PATH/logs
 
@@ -61,6 +72,8 @@ for confile in $(ls $HADOOP_TEMP_CONF/); do
     sed  -i s,HADOOP_DFS_DATA_DIR,$HADOOP_DFS_DATA_DIR,g $HADOOP_CONF/$confile
     sed  -i s,HADOOP_TMP_DIR,$HADOOP_TMP_DIR,g $HADOOP_CONF/$confile
     sed  -i s,JAVAHOME,$JAVAHOME,g $HADOOP_CONF/$confile
+    sed  -i s,HADOOP_ENV_NATIVE_PATH,$HADOOP_ENV_NATIVE_PATH,g $HADOOP_CONF/$confile
+    sed -i s,HADOOP_ENV_OPTS/$HADOOP_ENV_OPTS,g $HADOOP_CONF/$confile
 done
 
 # assign environment variables
@@ -74,40 +87,8 @@ export HADOOP_MAPRED_HOME=\$HADOOP_INSTALL
 export HADOOP_COMMON_HOME=\$HADOOP_INSTALL
 export HADOOP_HDFS_HOME=\$HADOOP_INSTALL
 export YARN_HOME=\$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_ENV_NATIVE_PATH
+export HADOOP_OPTS=$HADOOP_ENV_OPTS
 # end
 
 EVE
-
-HADOOP_SLAVES_FILE=$(echo $HADOOP_CONF/slaves)
-# TODO
-# update slaves file here
-#
-touch $HADOOP_SLAVES_FILE
-chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_PATH
-echo "yarn server done"
-
-
-echo "all done and start hadoop"
-#
-#set +e
-## format hdfs
-#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop namenode -format"
-#sleep 5
-#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-dfs.sh"
-#sleep 5
-#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-yarn.sh"
-#sleep 5
-#echo "jps on master"
-#su - $HADOOP_RUN_USER -c jps
-#echo "jps on slaves"
-#drbl-doit -h $DHOSTS "su - $HADOOP_RUN_USER -c jps"
-#
-## run example
-#echo "run hadoop example"
-#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
-#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
-#
-#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
-#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
-#
-#echo "enjoy hadoop, su to hduser to run all hadoop related commands."

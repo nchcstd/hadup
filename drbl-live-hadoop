@@ -31,6 +31,8 @@ HADOOP_TMP_DIR="/media/hadoop_data/tmp/"
 HADOOP_NAMENODE_DIR="/media/hadoop_data/namenode/"
 HADOOP_DFS_DATA_DIR="/media/hadoop_data/data/"
 HADOOP_LOG4J_DIR="/media/hadoop_data/log/"
+HADOOP_ENV_NATIVE_PATH=$HADOOP_INSTALL/lib/native
+HADOOP_ENV_OPTS="\"-Djava.library.path=$HADOOP_INSTALL/lib\""
 JAVAHOME=$(ls -l /etc/alternatives/java | awk {'print $11'} | sed s/jre.*//g)
 
 # drbl net device and ip, and update hostname
@@ -80,7 +82,8 @@ for confile in $(ls $HADOOP_TEMP_CONF/); do
     sed  -i s,HADOOP_NAMENODE_DIR,$HADOOP_NAMENODE_DIR,g  $HADOOP_CONF/$confile
     sed  -i s,HADOOP_DFS_DATA_DIR,$HADOOP_DFS_DATA_DIR,g $HADOOP_CONF/$confile
     sed  -i s,HADOOP_TMP_DIR,$HADOOP_TMP_DIR,g $HADOOP_CONF/$confile
-    #sed  -i s,HADOOP_LOG4J_DIR,$HADOOP_LOG4J_DIR,g $HADOOP_CONF/$confile #use tmpfs right now 
+    sed  -i s,HADOOP_ENV_NATIVE_PATH,$HADOOP_ENV_NATIVE_PATH,g $HADOOP_CONF/$confile
+    sed -i s,HADOOP_ENV_OPTS/$HADOOP_ENV_OPTS,g $HADOOP_CONF/$confile
     sed  -i s,JAVAHOME,$JAVAHOME,g $HADOOP_CONF/$confile
 done
 
@@ -95,6 +98,8 @@ export HADOOP_MAPRED_HOME=\$HADOOP_INSTALL
 export HADOOP_COMMON_HOME=\$HADOOP_INSTALL
 export HADOOP_HDFS_HOME=\$HADOOP_INSTALL
 export YARN_HOME=\$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_ENV_NATIVE_PATH
+export HADOOP_OPTS=$HADOOP_ENV_OPTS
 # end
 
 EVE
