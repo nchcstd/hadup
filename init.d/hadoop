@@ -1,0 +1,40 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          hadoop-common
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start hadoop at boot time
+# Description:       Enable hadoop cluster services at boot time
+### END INIT INFO
+
+HADOOP_RUN_USER=hadmin
+HADOOP_PATH=/usr/local/hadoop
+HADOOP_CONF_SERVER=$HADOOP_PATH/etc/hadoop/
+
+case "$1" in
+  start)
+    echo "Starting hadoop common"
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-dfs.sh --config $HADOOP_CONF_SERVER"
+    sleep 5
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/start-yarn.sh --config $HADOOP_CONF_SERVER"
+    sleep 5 
+    jps
+    ;;
+  stop)
+    echo "Stopping common"
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/stop-yarn.sh --config $HADOOP_CONF_SERVER"
+    sleep 5 
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/stop-dfs.sh --config $HADOOP_CONF_SERVER"
+    sleep 5
+    jps
+    ;;
+  *)
+    echo "Usage: /etc/init.d/hadoop {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0
+

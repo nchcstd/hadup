@@ -5,6 +5,15 @@
     GRUB_CMDLINE_LINUX="ipv6.disable=1"
     run
     update-grub
+    and
+    #disable ipv6  
+    sudo gedit /etc/sysctl.conf
+    net.ipv6.conf.all.disable_ipv6 = 1  
+    net.ipv6.conf.default.disable_ipv6 = 1   
+    net.ipv6.conf.lo.disable_ipv6 = 1  
+    You can also do sudo sysctl -p but I rather reboot.
+    cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+    it should say 1. If it says 0, you missed something.
 
 2. disable 127.0.1.1
    edit /etc/hosts
