@@ -1,6 +1,9 @@
 #!/bin/bash
 data_path="/hadoop_data/"
+log_path="/usr/local/hadoop/logs"
 create_path="mkdir -p $data_path/{data,log,namenode,tmp}"
 nodes="datanode01,namenode"
+pdsh -R ssh -w $nodes -l root "rm -rf $log_path/*"
 pdsh -R ssh -w $nodes -l root "rm -rf $data_path"
 pdsh -R ssh -w $nodes -l root "mkdir -p $create_path"
+pdsh -R ssh -w $nodes -l root "mkdir -p $log_path"
