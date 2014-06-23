@@ -1,0 +1,129 @@
+#!/bin/bash
+# 5. need namenode format?, do it  if count lager than replication
+# 6. restart dfs and yarn on slaves
+# 7. update status to standby
+
+# hadoop related path
+HADOOP_PATH="/usr/local/hadoop/"
+HADOOP_CONF=$(echo -n "$HADOOP_PATH/etc/hadoop/")
+HADOOP_SLAVES_FILE=$(echo $HADOOP_CONF/slaves)
+HADOOP_INIT_SCRIPT="/root/hadup/init/hadoop"
+HADOOP_RUN_USER="hadmin"
+HADOOP_DFS_VERSION="/hadoop_data/fs/current/VERSION"
+
+ipregex="\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+timeout=300
+ipaddr=$1
+hostname=$2
+
+if [ -z $ipaddr } || [ -z $hostname ];then
+    echo "miss ip $ipaddr or hostname $hostname"
+    exit
+else
+    CHECK=$(echo $ipaddr | egrep $ipregex)
+    if [ "$?" -ne 0 ]; then
+	echo -n "Incorrect IP address, please try again: $ipaddr"
+	exit
+    fi
+fi
+
+# functions
+
+# some interrupts
+remove_old_tmps(){
+    running=$(ls /tmp/update-hosts.*)
+    for tmp_file in $running; do
+	now=$(date +%s)
+	tmp_file_date=$(cat $tmp_file)
+	diff_time=$(($now-$tmp_file_date))
+	if [ $diff_time -gt $timeout ]; then
+	    rm $tmp_file
+	fi
+    done
+    running=$(ls /tmp/update-hosts.*)
+}
+
+#check all datanode
+check_format_version(){
+    for slave in $(cat $HADOOP_SLAVES_FILE); do
+	ret = ssh $slave "cat $HADOOP_DFS_VERSION"
+	if [ -n $ret ]; then
+	    return 1
+	fi
+    done
+}
+
+# check already format or format it
+check_format(){
+
+    formated=""
+    formated=check_format_version
+    all_slaves=$(cat $HADOOP_SLAVES_FILE | wc -l)
+    replication=xmlstarlet sel -t -v "/configuration/property[name='dfs.replication']/value" $HADOOP_CONF/hdfs-site.xml    
+    if [ "X$formated" -eq "X" ] && [ $all_slaves -gt $replication ]; then
+	su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop namenode -format"
+	sleep 5
+    fi
+}
+
+# update_hosts
+update_hosts(){
+    cp /etc/hosts /etc/hosts.bak
+    echo "$ipaddr  $hostname" >> /etc/hosts
+    echo $hostname >> $HADOOP_SLAVES_FILE
+    slaves=$(cat $HADOOP_SLAVES_FILE)
+    pdcp -R ssh -w $slaves /etc/hosts /etc/hosts
+    check_format
+    su hadmin -c "ssh $hostname start-dfs.sh"
+    sleep 10
+    su hadmin -c "ssh $hostname start-yarn.sh"
+}
+
+
+# main
+running=$(ls /tmp/update-hosts.* | wc -l)
+
+if [ $running -ge 1 ]; then
+    remove_old_tmps
+fi
+
+if [ -z $running ]; then
+    set -e
+    STATUS=$(mktemp /tmp/update-hosts.XXXXXXXXXX) || { echo "Failed to create temp file"; exit 1; }
+    echo $(date +%s)>$STATUS
+    update_hosts
+    rm $STATUS
+    echo "Ok"
+else
+    echo "running"
+fi
+#rm $HADOOP_SLAVES_FILE
+#update each datanode /etc/hostname
+#update each datanode /etc/hosts
+#reboot every datanode or run hostname command
+#fixme not just touh me
+#update $HADOOP_SLAVES_FILE namenode only
+#chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_PATH
+#
+## format hdfs
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop namenode -format"
+#sleep 5
+#
+### install init script namenode only
+#cp $HADOOP_INIT_SCRIPT /etc/init.d/
+#echo "/etc/init.d/hadoop start"
+#
+#echo "jps on master"
+#su - $HADOOP_RUN_USER -c jps
+#echo "jps on slaves"
+#drbl-doit -h $DHOSTS "su - $HADOOP_RUN_USER -c jps"
+#
+## run example
+#echo "run hadoop example"
+#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+#
+#echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+#su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+#
+#echo "enjoy hadoop, su to hduser to run all hadoop related commands."
