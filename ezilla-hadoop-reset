@@ -1,0 +1,65 @@
+#!/bin/bash
+here=$(pwd)
+x=$(basename $here)
+if [ "X$x" != "Xhadup" ]; then
+    echo "change path to hadup first!"
+    exit
+fi
+echo "ready to reset"
+
+slaves="192.168.122.80,192.168.122.124"
+netdev="eth0"
+pdcp_cmd="pdcp -R ssh -l root -w $slaves "
+pdsh_cmd="pdsh -R ssh -l root -w $slaves "
+
+# stop all hadoop service
+su hadmin -c /usr/local/hadoop/sbin/stop-yarn.sh
+su hadmin -c /usr/local/hadoop/sbin/stop-dfs.sh
+
+# clean all hadoop data
+[ -f ezilla-hadoop-cleanup ] && ./ezilla-hadoop-cleanup
+
+set -e
+# clean and reset namenode /etc/hosts rm /tmp/update_hosts*
+current_ip=$(ifconfig $netdev | grep 'inet addr' | awk '{print $2}' | sed s/addr://)
+current_hostname=$(hostname)
+
+cat > /etc/hosts << EOF
+# Begin /etc/hosts (regenerate by ezhadoop)
+127.0.0.1 localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+# hadoop hosts
+$current_ip $current_hostname
+
+EOF
+
+# clear datanode files "/etc/datanode* /etc/hosts"
+$pdcp_cmd /etc/hosts /etc/hosts
+$pdsh_cmd "rm /etc/datanode*"
+
+# sopy file to datanode ezilla-hadoop-dfsmount init.d/hadoop_dn to init.d, ezilla-hadoop-datanode-postrun to /root/ezhadoop/
+$pdcp_cmd init.d/ezilla-hadoop-dfsmount /etc/init.d/
+$pdcp_cmd init.d/hadoop_dn /etc/init.d/
+$pdcp_cmd ezilla-hadoop-datanode-postrun /root/ezhadoop/
+$pdsh_cmd "insserv -d ezilla-hadoop-dfsmount"
+$pdsh_cmd "insserv -d hadoop_dn"
+
+# copy file to namenode ezilla-hadoop-base ezilla-hadoop-cleanup ezilla-hadoop-namenode-postrun to /root/ezhadoop/
+cp ezilla-hadoop-base ezilla-hadoop-cleanup ezilla-hadoop-namenode-postrun  /root/ezhadoop/
+cp init.d/hadoop /etc/init.d/
+insserv -d hadoop
+set +e
+rm /tmp/update_host*
+set -e
+
+# sync hadoop to datanode by option /usr/local/hadoop/* exclude slaves logs
+# 
+$pdsh_cmd rsync -avrl --exclude 'hadoop/etc/hadoop/slaves' --exclude 'hadoop/logs' --exclude 'hadoop/etc/hadoop/slaves.bak' $current_ip:/usr/local/hadoop /usr/local/
+$pdsh_cmd "chown -R hadmin:hadmin /usr/local/hadoop"
+$pdsh_cmd "chown -R hadmin:hadmin /hadoop_data"
+#$pdsh_cmd "reboot"
