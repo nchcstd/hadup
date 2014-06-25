@@ -30,7 +30,7 @@ prompt_for_exist_partition="N" # don't touch exist data and partition table
 
 # define variables
 UUID="e367716d-0646-4507-b630-d8148c3f2a13"
-DEFAULT_DISK="/dev/sdb"
+DEFAULT_DISK="/dev/vdb"
 
 #
 DEFAULT_FS="ext3"
@@ -143,6 +143,7 @@ start() {
 
   if [ ! -x $HADOOP_MOUNTPOINT ]; then
     mkdir -p $HADOOP_MOUNTPOINT
+    mkdir -p $HADOOP_MOUNTPOINT/{data,log,namenode,tmp}
   fi
 
   if [ -z "$PART"  ]; then

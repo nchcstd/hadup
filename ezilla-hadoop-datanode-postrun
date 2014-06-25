@@ -3,14 +3,16 @@
 # 1. update hostname
 # 4. report ip and hostname to namenode
 
-set -e
-
-datanode_flag="/etc/datanode"
-update_datanode_cmd="/root/ezilla-hadoop-namenode-postrun"
-
-if [ -f $datanode_flag ];then
+touch /etc/datanode_status
+dn_status=$(cat /etc/datanode_status)
+if [ "X$dn_status" == "XOk" ];then
     exit
 fi
+
+datanode_flag="/etc/datanode"
+update_datanode_cmd="/root/ezhadoop/ezilla-hadoop-namenode-postrun"
+
+set -e
 
 # add -f option ?
 logger "datanode post run"
@@ -31,17 +33,23 @@ echo $new_host_name > /etc/hostname
 echo "$datanode_ip  $new_host_name" > $datanode_flag
 chmod 400 $datanode_flag
 
+# 2. remove slaves
+set +e
+rm /usr/local/hadoop/etc/hadoop/slaves
+set -e
+
 #4. report ip and hostname to namenode
 logger "scp data to $list_of_all_slaves "
 #scp $datanode_flag $namenode_ip:$list_of_all_slaves/$new_host_name
 
 while true
 do
-ret=$(ssh $namenode_ip $update_datanode_cmd)
-if [ "X$ret" -eq "Xrunning" ];then
+ret=$(ssh $namenode_ip $update_datanode_cmd $datanode_ip $new_host_name)
+if [ "X$ret" == "Xrunning" ];then
     sleep 15
-elif ["X$ret" -eq "XOk"]; then
+elif [ "X$ret" == "XOk" ]; then
     logger "add to hadoop $ret"
+    echo $ret > /etc/datanode_status
     break
 else
     logger "$ret"
