@@ -1,11 +1,12 @@
 #!/bin/bash
 here=$(pwd)
 x=$(basename $here)
-if [ "X$x" != "Xhadup" ]; then
-    echo "change path to hadup first!"
+if [ "X$x" == "Xhadup" ] || [ "X$x" == "Xezhadoop" ]; then
+    echo "ready to reset"
+else
+    echo "change path to hadup or ezhadoop first!"
     exit
 fi
-echo "ready to reset"
 
 slaves="192.168.122.80,192.168.122.124"
 netdev="eth0"
@@ -43,6 +44,7 @@ $pdcp_cmd /etc/hosts /etc/hosts
 $pdsh_cmd "rm /etc/datanode*"
 
 # sopy file to datanode ezilla-hadoop-dfsmount init.d/hadoop_dn to init.d, ezilla-hadoop-datanode-postrun to /root/ezhadoop/
+# add rc.local update fixme or added to init?
 $pdcp_cmd init.d/ezilla-hadoop-dfsmount /etc/init.d/
 $pdcp_cmd init.d/hadoop_dn /etc/init.d/
 $pdcp_cmd ezilla-hadoop-datanode-postrun /root/ezhadoop/
@@ -54,6 +56,7 @@ cp ezilla-hadoop-base ezilla-hadoop-cleanup ezilla-hadoop-namenode-postrun  /roo
 cp init.d/hadoop /etc/init.d/
 insserv -d hadoop
 set +e
+rm /etc/namenode_status
 rm /tmp/update_host*
 set -e
 

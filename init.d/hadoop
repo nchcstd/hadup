@@ -13,6 +13,7 @@ HADOOP_RUN_USER=hadmin
 HADOOP_PATH=/usr/local/hadoop
 HADOOP_CONF_SERVER=$HADOOP_PATH/etc/hadoop/
 
+[ -f /etc/namenode_status ] || exit
 case "$1" in
   start)
     echo "Starting hadoop common"

@@ -78,6 +78,7 @@ check_format(){
         chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_DATA
 	su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hdfs namenode -format"
 	sleep 5
+	touch /etc/namenode_status
         dfs_formated=1
     fi
     

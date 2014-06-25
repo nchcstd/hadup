@@ -16,6 +16,8 @@ sysctl -p
 apt-get update
 apt-get install -y openjdk-7-jdk
 apt-get install -y ntpdate
+apt-get install -y parted
+apt-get install -y xmlstarlet
 service ssh start
 
 # download something from SF.net here
@@ -50,6 +52,8 @@ Host *
     StrictHostKeyChecking no
     UserKnownHostsFile=/dev/null
 EOF
+cp /home/$HADOOP_RUN_USER/.ssh/config /root/.ssh/config
+
 rm -rf $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_DFS_DATA_DIR
 mkdir -p $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_DFS_DATA_DIR $HADOOP_LOG4J_DIR
 chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_TMP_DIR $HADOOP_NAMENODE_DIR $HADOOP_LOG4J_DIR $HADOOP_DFS_DATA_DIR /home/$HADOOP_RUN_USER
