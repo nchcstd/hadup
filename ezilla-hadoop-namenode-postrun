@@ -74,11 +74,13 @@ check_format(){
     dfs_formated=$formated
     all_slaves=$(cat $HADOOP_SLAVES_FILE | wc -l)
     replication=$(xmlstarlet sel -t -v "/configuration/property[name='dfs.replication']/value" $HADOOP_CONF/hdfs-site.xml)
-    if [ "$formated" -eq "0" ] && [ $all_slaves -gt $replication ]; then
+    if [ "$formated" -eq "0" ] && [ $all_slaves -ge $replication ]; then
         chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_DATA
 	su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hdfs namenode -format"
 	sleep 5
 	touch /etc/namenode_status
+        /etc/init.d/hadoop start
+	sleep 5
         dfs_formated=1
     fi
     
@@ -114,7 +116,6 @@ update_hosts(){
         su hadmin -c "ssh $hostname $HADOOP_PATH/sbin/yarn-daemon.sh start resourcemanager"
         sleep 10
         su hadmin -c "ssh $hostname $HADOOP_PATH/sbin/yarn-daemon.sh start nodemanager"
-        /etc/init.d/hadoop start
     fi
 }
 
@@ -129,7 +130,8 @@ fi
 if [ $running -eq 0  ] ; then
     set -e
     STATUS=$(mktemp /tmp/update-hosts.XXXXXXXXXX) || { echo "Failed to create temp file"; exit 1; }
-    echo $(date +%s)>$STATUS
+    echo $(date +%s) > $STATUS
+    echo $hostname >> $STATUS
     update_hosts
     rm $STATUS
     echo "Ok"

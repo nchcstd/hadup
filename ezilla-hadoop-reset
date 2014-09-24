@@ -50,14 +50,20 @@ $pdcp_cmd init.d/hadoop_dn /etc/init.d/
 $pdcp_cmd ezilla-hadoop-datanode-postrun /root/ezhadoop/
 $pdsh_cmd "insserv -d ezilla-hadoop-dfsmount"
 $pdsh_cmd "insserv -d hadoop_dn"
+$pdsh_cmd "rm /root/.bash_history"
+$pdsh_cmd "rm /home/hadmin/.bash_history"
 
 # copy file to namenode ezilla-hadoop-base ezilla-hadoop-cleanup ezilla-hadoop-namenode-postrun to /root/ezhadoop/
-cp ezilla-hadoop-base ezilla-hadoop-cleanup ezilla-hadoop-namenode-postrun  /root/ezhadoop/
+cp -r ezilla-hadoop-* init.d/ /root/ezhadoop/
 cp init.d/hadoop /etc/init.d/
 insserv -d hadoop
 set +e
 rm /etc/namenode_status
-rm /tmp/update_host*
+rm /tmp/update-host*
+rm /home/hadmin/.bash_history
+rm /root/.bash_history
+rm /usr/local/hadoop/etc/hadoop/slaves
+touch /usr/local/hadoop/etc/hadoop/slaves
 set -e
 
 # sync hadoop to datanode by option /usr/local/hadoop/* exclude slaves logs
@@ -66,3 +72,4 @@ $pdsh_cmd rsync -avrl --exclude 'hadoop/etc/hadoop/slaves' --exclude 'hadoop/log
 $pdsh_cmd "chown -R hadmin:hadmin /usr/local/hadoop"
 $pdsh_cmd "chown -R hadmin:hadmin /hadoop_data"
 #$pdsh_cmd "reboot"
+echo "run history -c to clean history manual"
