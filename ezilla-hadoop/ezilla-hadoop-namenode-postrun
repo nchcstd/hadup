@@ -1,7 +1,4 @@
 #!/bin/bash
-# 5. need namenode format?, do it  if count lager than replication
-# 6. restart dfs and yarn on slaves
-# 7. update status to standby
 
 # hadoop related path
 HADOOP_PATH="/usr/local/hadoop/"
@@ -14,6 +11,7 @@ HADOOP_NN_DIR="/namenode"
 HADOOP_NN_DFS_VERSION="/current/VERSION"
 
 slaves_bak=$HADOOP_SLAVES_FILE.bak
+slave_status_fd=/etc/datanode_status
 
 ipregex="\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
 timeout=300
@@ -22,13 +20,13 @@ hostname=$2
 dfs_formated=0
 
 if [ -z $ipaddr ] || [ -z $hostname ];then
-    echo "miss ip $ipaddr or hostname $hostname"
-    exit
+    logger "miss ip $ipaddr or hostname $hostname"
+    error
 else
     CHECK=$(echo $ipaddr | egrep $ipregex)
     if [ "$?" -ne 0 ]; then
-	echo -n "Incorrect IP address, please try again: $ipaddr"
-	exit
+	logger -n "Incorrect IP address, please try again: $ipaddr"
+	error
     fi
 fi
 
@@ -36,8 +34,8 @@ fi
 
 #errexit
 error(){
-    cp /etc/hosts.bak /etc/hosts
-    cp $slaves_bak $HADOOP_SLAVES_FILE
+    #cp /etc/hosts.bak /etc/hosts
+    #cp $slaves_bak $HADOOP_SLAVES_FILE
     rm /tmp/update_hosts*
     exit
 }
@@ -47,7 +45,7 @@ remove_old_tmps(){
     running=$(ls /tmp/update-hosts.*)
     for tmp_file in $running; do
 	now=$(date +%s)
-	tmp_file_date=$(cat $tmp_file)
+	tmp_file_date=$(head -n 1 $tmp_file)
 	diff_time=$(($now-$tmp_file_date))
 	if [ $diff_time -gt $timeout ]; then
 	    rm $tmp_file
@@ -60,6 +58,7 @@ remove_old_tmps(){
 check_format_version(){
     fret=$([ -f $HADOOP_DATA/$HADOOP_NN_DIR/$HADOOP_NN_DFS_VERSION ] && echo exist)
     if [ "X$fret" == "Xexist" ]; then
+        logger "nn formated"
         echo 1
     else
         echo 0
@@ -69,12 +68,14 @@ check_format_version(){
 # check already format or format it
 check_format(){
 
+    logger "check format"
     formated=0
     formated=$(check_format_version)
     dfs_formated=$formated
     all_slaves=$(cat $HADOOP_SLAVES_FILE | wc -l)
     replication=$(xmlstarlet sel -t -v "/configuration/property[name='dfs.replication']/value" $HADOOP_CONF/hdfs-site.xml)
     if [ "$formated" -eq "0" ] && [ $all_slaves -ge $replication ]; then
+        logger "nn formating"
         chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER $HADOOP_DATA
 	su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hdfs namenode -format"
 	sleep 5
@@ -82,6 +83,7 @@ check_format(){
         /etc/init.d/hadoop start
 	sleep 5
         dfs_formated=1
+        logger "namenode formate done"
     fi
     
 }
@@ -98,8 +100,8 @@ update_hosts(){
     if [ -z "$added_ip" ] && [ -z "$added_hn" ]; then
         echo "$ipaddr  $hostname" >> /etc/hosts
     else
-        echo "ip($added_ip) or hostname(added_hn) duplicate, check hosts first"
-        exit
+        logger "ip($added_ip) or hostname(added_hn) duplicate, check hosts first"
+        error
     fi
     if [ -z "$added_slaves" ]; then
         echo $hostname >> $HADOOP_SLAVES_FILE
@@ -110,13 +112,6 @@ update_hosts(){
 
     pdcp -R ssh -w $slaves /etc/hosts /etc/hosts
     check_format
-    if [ "$dfs_formated" -eq "1" ]; then
-        su hadmin -c "ssh $hostname $HADOOP_PATH/sbin/hadoop-daemon.sh start datanode"
-        sleep 10
-        su hadmin -c "ssh $hostname $HADOOP_PATH/sbin/yarn-daemon.sh start resourcemanager"
-        sleep 10
-        su hadmin -c "ssh $hostname $HADOOP_PATH/sbin/yarn-daemon.sh start nodemanager"
-    fi
 }
 
 
@@ -134,8 +129,12 @@ if [ $running -eq 0  ] ; then
     echo $hostname >> $STATUS
     update_hosts
     rm $STATUS
-    echo "Ok"
+    ssh $hostname "echo -e -n Ok > $slave_status_fd"
+    logger "$hostname add Ok"
+    
 else
+    ssh $ipaddr "echo -e -n running > $slave_status_fd"
     echo "running"
+    logger "$ipaddr still running"
 fi
 

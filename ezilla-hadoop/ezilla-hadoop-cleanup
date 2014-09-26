@@ -3,10 +3,12 @@ user="hadmin"
 data_path="/hadoop_data/"
 log_path="/usr/local/hadoop/logs"
 create_path="mkdir -p $data_path/{data,log,namenode,tmp}"
-nodes="datanode80,namenode,datanode124"
+nodes="namenode,172.20.1.7"
 pdsh -R ssh -w $nodes -l root "rm -rf $log_path/*"
 pdsh -R ssh -w $nodes -l root "rm -rf $data_path/*"
 pdsh -R ssh -w $nodes -l root "$create_path"
 pdsh -R ssh -w $nodes -l root "mkdir -p $log_path"
 pdsh -R ssh -w $nodes -l root "chown -R $user:$user $data_path"
 pdsh -R ssh -w $nodes -l root "chown -R $user:$user $log_path"
+rm /usr/local/hadoop/etc/hadoop/slaves
+rm /tmp/update-hosts*
