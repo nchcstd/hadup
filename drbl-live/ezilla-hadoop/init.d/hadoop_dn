@@ -11,28 +11,19 @@
 
 HADOOP_RUN_USER=hadmin
 HADOOP_PATH=/usr/local/hadoop
-HADOOP_CONF_SERVER=$HADOOP_PATH/etc/hadoop/
 
 [ -f /etc/datanode_status ] || exit 
 
 case "$1" in
   start)
     echo "Starting hadoop common"
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/hadoop-daemon.sh start datanode --config $HADOOP_CONF_SERVER "
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/hadoop-daemon.sh start datanode"
     sleep 5                                                                                                     
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/yarn-daemon.sh start resourcemanager --config $HADOOP_CONF_SERVER"
-    sleep 5                                                                                                     
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/yarn-daemon.sh start nodemanager --config $HADOOP_CONF_SERVER"
-    sleep 5
     jps
     ;;
   stop)
     echo "Stopping common"
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/yarn-daemon.sh stop nodemanager --config $HADOOP_CONF_SERVER "
-    sleep 5                                                                                                     
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/yarn-daemon.sh stop resourcemanager --config $HADOOP_CONF_SERVER"
-    sleep 5                                                                                                     
-    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/hadoop-daemon.sh stop datanode --config $HADOOP_CONF_SERVER"
+    su - $HADOOP_RUN_USER -c "$HADOOP_PATH/sbin/hadoop-daemon.sh stop datanode"
     sleep 5
     jps
     ;;

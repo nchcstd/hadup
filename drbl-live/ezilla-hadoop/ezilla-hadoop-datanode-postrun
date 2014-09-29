@@ -45,6 +45,7 @@ if [ "X$ret" == "Xrunning" ];then
 elif [ "X$ret" == "XOk" ]; then
     logger "add to hadoop $ret"
     echo $ret > /etc/datanode_status
+    /etc/init.d/hadoop_dn start
     break
 else
     logger "$ret"

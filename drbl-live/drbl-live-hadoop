@@ -20,8 +20,11 @@ echo $nhostname > /etc/hostname
 hostname $nhostname
 
 # download something from SF.net here
-wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.3.tar.gz -O /opt/drbl-live-hadoop_0.3.tar.gz
+if [ ! -f /opt/drbl-live-hadoop_0.3.tar.gz  ]; then
+    wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.3.tar.gz -O /opt/drbl-live-hadoop_0.3.tar.gz
+fi
 tar -zxvf /opt/drbl-live-hadoop_0.3.tar.gz -C /opt/
+
 # Pre run
 echo "update base drbl image"
 /opt/ezilla-hadoop/ezilla-hadoop-base
@@ -32,7 +35,7 @@ rm /usr/local/hadoop_client/etc/hadoop/slaves
 
 cp /opt/ezilla-hadoop/init.d/hadoop_dn /etc/init.d/
 echo "$drbl_ip" > /etc/namenode
-echo 'service_extra_added="hadoop_dn"' > /etc/drbl/client-extra-service
+echo 'service_extra_added="hadoop_dn rc.local"' > /etc/drbl/client-extra-service
 echo "$drbl_ip:/usr/local/hadoop_client    /usr/local/hadoop/    nfs    rw,hard,intr,nfsvers=3,tcp,nolock,defaults 0 0" > /etc/drbl/client-append-fstab
 echo "$drbl_ip:/opt/rssh/    /root/.ssh    nfs    rw,hard,intr,nfsvers=3,tcp,nolock,defaults 0 0" >> /etc/drbl/client-append-fstab
 echo "tmpfs /usr/local/hadoop/logs tmpfs defaults 0 0" >> /etc/drbl/client-append-fstab
@@ -53,6 +56,8 @@ cat << EVE > /etc/rc.local
 
 # add for hadoop-drbl
 mkdir -p /media/hadoop_data/data/
+chown -R hadmin:hadmin /media/hadoop_data
+mount -t tmpfs none /usr/local/hadoop/logs
 /opt/ezilla-hadoop/ezilla-hadoop-datanode-postrun
 # end
 
@@ -67,7 +72,7 @@ cp /root/.ssh/* /opt/rssh/
 drblpush -c /etc/drbl/drblpush.conf
 cp /opt/ezilla-hadoop/init.d/hadoop /etc/init.d/
 mount -o bind /usr/local/hadoop_server /usr/local/hadoop/
-chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER /usr/local/hadoop/
+chown -R $HADOOP_RUN_USER:$HADOOP_RUN_USER /usr/local/hadoop*
 rm /usr/local/hadoop/etc/hadoop/slaves
 #touch /etc/namenode_status
 #/etc/init.d/hadoop start
