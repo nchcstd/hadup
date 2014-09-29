@@ -1,6 +1,6 @@
 #!/bin/bash
 user="hadmin"
-data_path="/hadoop_data/"
+data_path="/media/hadoop_data/"
 log_path="/usr/local/hadoop/logs"
 create_path="mkdir -p $data_path/{data,log,namenode,tmp}"
 nodes="namenode,172.20.1.7"

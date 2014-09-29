@@ -10,13 +10,12 @@ if [ "X$dn_status" == "XOk" ];then
 fi
 
 datanode_flag="/etc/datanode"
-update_datanode_cmd="/root/ezhadoop/ezilla-hadoop-namenode-postrun"
+update_datanode_cmd="/opt/ezilla-hadoop/ezilla-hadoop-namenode-postrun"
 
 set -e
 
 # add -f option ?
 logger "datanode post run"
-list_of_all_slaves="/root/new_slaves/"
 namenode_ip=$(cat /etc/namenode)
 netdev="eth0"
 datanode_ip=$(ifconfig $netdev | grep 'inet addr' | awk '{print $2}' | sed s/addr://)
@@ -37,10 +36,6 @@ chmod 400 $datanode_flag
 set +e
 rm /usr/local/hadoop/etc/hadoop/slaves
 set -e
-
-#4. report ip and hostname to namenode
-logger "scp data to $list_of_all_slaves "
-#scp $datanode_flag $namenode_ip:$list_of_all_slaves/$new_host_name
 
 while true
 do

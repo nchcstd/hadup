@@ -17,27 +17,27 @@ apt-get update
 apt-get install -y openjdk-7-jdk
 apt-get install -y ntpdate
 apt-get install -y parted
-apt-get install -y xmlstarlet
+apt-get install -y xmlstarlet pdsh
 service ssh start
 
 # download something from SF.net here
-wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.2.tar.gz -O /root/drbl-live-hadoop_0.2.tar.gz
-tar -zxvf /root/drbl-live-hadoop_0.2.tar.gz -C /root/
+#wget http://prdownloads.sourceforge.net/drbl-hadoop/drbl-live-hadoop_0.2.tar.gz -O /opt/drbl-live-hadoop_0.2.tar.gz
+#tar -zxvf /opt/drbl-live-hadoop_0.2.tar.gz -C /opt/
 
 # basic variables
-HADOOP_TEMP_CONF="/root/drbl-live-hadoop-tmpl-conf"
+HADOOP_TEMP_CONF="/opt/drbl-live-hadoop-tmpl-conf"
 HADOOP_RUN_USER="hadmin"
-HADOOP_SOURCE="/root/hadoop-2.3.0.tar.gz"
+HADOOP_SOURCE="/opt/hadoop-2.3.0.tar.gz"
 
 # hadoop related path
 HADOOP_PATH="/usr/local/hadoop/"
 HADOOP_CONF=$(echo -n "$HADOOP_PATH/etc/hadoop/")
-HADOOP_TMP_DIR="/hadoop_data/tmp/"
-HADOOP_NAMENODE_DIR="/hadoop_data/namenode/"
-HADOOP_DFS_DATA_DIR="/hadoop_data/data/"
-HADOOP_LOG4J_DIR="/hadoop_data/log/"
-HADOOP_ENV_NATIVE_PATH=$HADOOP_INSTALL/lib/native
-HADOOP_ENV_OPTS="\"-Djava.library.path=$HADOOP_INSTALL/lib\""
+HADOOP_TMP_DIR="/media/hadoop_data/tmp/"
+HADOOP_NAMENODE_DIR="/media/hadoop_data/namenode/"
+HADOOP_DFS_DATA_DIR="/media/hadoop_data/data/"
+HADOOP_LOG4J_DIR="/media/hadoop_data/log/"
+HADOOP_ENV_NATIVE_PATH="$HADOOP_PATH/lib/native"
+HADOOP_ENV_OPTS="\"-Djava.library.path=$HADOOP_PATH/lib\""
 JAVAHOME=$(ls -l /etc/alternatives/java | awk {'print $11'} | sed s/jre.*//g)
 
 # update hostname
@@ -77,7 +77,7 @@ for confile in $(ls $HADOOP_TEMP_CONF/); do
     sed  -i s,HADOOP_TMP_DIR,$HADOOP_TMP_DIR,g $HADOOP_CONF/$confile
     sed  -i s,JAVAHOME,$JAVAHOME,g $HADOOP_CONF/$confile
     sed  -i s,HADOOP_ENV_NATIVE_PATH,$HADOOP_ENV_NATIVE_PATH,g $HADOOP_CONF/$confile
-    sed -i s,HADOOP_ENV_OPTS/$HADOOP_ENV_OPTS,g $HADOOP_CONF/$confile
+    sed  -i s,HADOOP_ENV_OPTS,$HADOOP_ENV_OPTS,g $HADOOP_CONF/$confile
 done
 
 # assign environment variables
@@ -87,10 +87,10 @@ cat << EVE >> /home/$HADOOP_RUN_USER/.bashrc
 export JAVA_HOME=$JAVAHOME
 export HADOOP_INSTALL=$HADOOP_PATH
 export PATH=$PATH:$HADOOP_PATH/bin:$HADOOP_PATH/sbin
-export HADOOP_MAPRED_HOME=\$HADOOP_INSTALL
-export HADOOP_COMMON_HOME=\$HADOOP_INSTALL
-export HADOOP_HDFS_HOME=\$HADOOP_INSTALL
-export YARN_HOME=\$HADOOP_INSTALL
+export HADOOP_MAPRED_HOME=$HADOOP_PATH
+export HADOOP_COMMON_HOME=$HADOOP_PATH
+export HADOOP_HDFS_HOME=$HADOOP_PATH
+export YARN_HOME=$HADOOP_PATH
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_ENV_NATIVE_PATH
 export HADOOP_OPTS=$HADOOP_ENV_OPTS
 # end

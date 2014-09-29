@@ -38,7 +38,7 @@ DEFAULT_FS_OPTS="-U $UUID"
 #
 PART=""
 SWAP=""
-HADOOP_MOUNTPOINT="/hadoop_data/"
+HADOOP_MOUNTPOINT="/media/hadoop_data/"
 HADOOP_USER="hadmin"
 HADOOP_GROUP="hadmin"
 

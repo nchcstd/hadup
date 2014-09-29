@@ -4,14 +4,14 @@
 HADOOP_PATH="/usr/local/hadoop/"
 HADOOP_CONF=$(echo -n "$HADOOP_PATH/etc/hadoop/")
 HADOOP_SLAVES_FILE=$(echo $HADOOP_CONF/slaves)
-HADOOP_INIT_SCRIPT="/root/hadup/init/hadoop"
 HADOOP_RUN_USER="hadmin"
-HADOOP_DATA="/hadoop_data"
+HADOOP_DATA="/media/hadoop_data"
 HADOOP_NN_DIR="/namenode"
 HADOOP_NN_DFS_VERSION="/current/VERSION"
 
 slaves_bak=$HADOOP_SLAVES_FILE.bak
 slave_status_fd=/etc/datanode_status
+touch $HADOOP_SLAVES_FILE
 
 ipregex="\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
 timeout=300
@@ -101,7 +101,8 @@ update_hosts(){
         echo "$ipaddr  $hostname" >> /etc/hosts
     else
         logger "ip($added_ip) or hostname(added_hn) duplicate, check hosts first"
-        error
+        #error
+        echo "$ipaddr  $hostname" >> /etc/hosts
     fi
     if [ -z "$added_slaves" ]; then
         echo $hostname >> $HADOOP_SLAVES_FILE
