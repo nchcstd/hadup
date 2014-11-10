@@ -1,0 +1,50 @@
+#!/bin/bash
+drbl_interface=$(cat /etc/drbl/drblpush.conf  | grep interface | head -n1 | sed s/interface=//g)
+drbl_interface_ip=$(ifconfig $drbl_interface | grep "inet " | awk '{gsub("addr:","",$2);  print $2 }')
+puppetserver=$(grep "$drbl_interface_ip " /etc/hosts | head -n 1| awk '{print $2}')
+
+## install puppet
+apt-get install puppetmaster puppet
+/etc/init.d/puppet stop
+/etc/init.d/puppetmaster stop
+find $(puppet master --configprint ssldir) -name "$(puppet master --configprint certname).pem" -delete
+
+## config puppet
+sed  -i s/START=.*/START=yes/ /etc/default/puppet
+sed  -i s/START=.*/START=no/ /etc/default/puppetmaster
+sed -i s/\\[main\\]/\\[main\\]\\nserver=$(echo $puppetserver)/g /etc/puppet/puppet.conf
+echo 'service_extra_added="puppet"' >> /etc/drbl/client-extra-service
+
+## repush
+drblpush -c /etc/drbl/drblpush.conf
+
+## config master
+sed  -i s/START=.*/START=yes/ /etc/default/puppet
+sed  -i s/START=.*/START=yes/ /etc/default/puppetmaster
+echo "*" > /etc/puppet/autosign.conf
+echo "autosign = true" >> /etc/puppet/puppet.conf
+echo "dns_alt_names=$puppetserver" >> /etc/puppet/puppet.conf
+/etc/init.d/puppet restart
+/etc/init.d/puppetmaster restart
+
+#https://docs.puppetlabs.com/guides/troubleshooting.html#agents-are-failing-with-a-hostname-was-not-match-with-the-server-certificate-error-whats-wrong
+#Re-generate the puppet master’s certificate:
+#Stop puppet master.
+#Delete the puppet master’s certificate, private key, and public key:
+#$ sudo find $(puppet master --configprint ssldir) -name "$(puppet master --configprint certname).pem" -delete
+#Edit the certname setting in the puppet master’s /etc/puppet/puppet.conf file to match the puppet master’s actual hostname, and the dns_alt_names setting in that file to match any other DNS names you expect the master to need to respond to.
+#Start a non-daemonized WEBrick puppet master instance, and wait for it to generate and sign a new certificate:
+#$ sudo puppet master --no-daemonize --verbose
+#You should stop the temporary puppet master with ctrl-C after you see the “notice: Starting Puppet master version 2.6.9” message.
+#Restart the puppet master.
+#
+#test
+#root@debian:/etc/puppet# cat manifests/site.pp 
+#node /^debian/ {
+#      notify { "Hey ! It works !": }
+#}
+#
+#client test:
+#/etc/init.d/puppet stop
+#puppetd -t -o
+#

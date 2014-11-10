@@ -1,0 +1,23 @@
+#!/bin/bash
+HADOOP_RUN_USER=hadmin
+HADOOP_PATH=/usr/local/hadoop
+echo "run hadoop example"
+echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar pi 1 1"
+
+echo "su - $HADOOP_RUN_USER -c $HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+su - $HADOOP_RUN_USER -c "$HADOOP_PATH/bin/hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-2.3.0.jar  TestDFSIO -write -nrFiles 2 -size 2MB"
+
+echo "enjoy hadoop, su to hduser to run all hadoop related commands."
+
+echo "hadoop word count"
+
+pushd /home/$HADOOP_RUN_USER
+su - $HADOOP_RUN_USER -c "mkdir in"
+su - $HADOOP_RUN_USER -c "touch in/file"
+su - $HADOOP_RUN_USER -c "echo "This is one line" >> in/file"
+su - $HADOOP_RUN_USER -c "echo "This is another one" >> in/file"
+su - $HADOOP_RUN_USER -c "hadoop dfs -copyFromLocal in /in"
+su - $HADOOP_RUN_USER -c "hadoop jar  /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.3.0.jar wordcount /in /out"
+su - $HADOOP_RUN_USER -c "hadoop dfs -cat /out/*"
+
